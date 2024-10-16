@@ -4,11 +4,13 @@
 #include <iomanip>
 #include <openssl/sha.h>
 
+
 using namespace std;
 
 namespace cry{
-    //
+    
     string sha512_hash(const string& file_path){
+        //open the plaintext file and throw an error when facing problems
         ifstream file(file_path, ios::binary);
         if(!file.is_open()){
             throw logic_error("cannot open the file");
