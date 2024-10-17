@@ -8,7 +8,7 @@ using namespace cry;
 int main(){
     //Hash function 
     try{
-        string hash = sha512_hash("plaintext_file.pdf");
+        string hash = sha512_hash("../plaintext_file.pdf");
 
         ofstream out("digest file.hex");
         out << hash;

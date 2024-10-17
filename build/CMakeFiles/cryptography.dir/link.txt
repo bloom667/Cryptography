@@ -1,3 +1,1 @@
-D:\Cmake\bin\cmake.exe -E rm -f CMakeFiles\cryptography.dir/objects.a
-C:\msys64\mingw64\bin\ar.exe qc CMakeFiles\cryptography.dir/objects.a @CMakeFiles\cryptography.dir\objects1.rsp
-C:\msys64\mingw64\bin\c++.exe -Wl,--whole-archive CMakeFiles\cryptography.dir/objects.a -Wl,--no-whole-archive -o cryptography.exe -Wl,--out-implib,libcryptography.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\cryptography.dir\linkLibs.rsp
+/usr/bin/c++ CMakeFiles/cryptography.dir/src/main.cpp.o CMakeFiles/cryptography.dir/src/Cry.cpp.o -o cryptography  /usr/lib/x86_64-linux-gnu/libssl.so /usr/lib/x86_64-linux-gnu/libcrypto.so 

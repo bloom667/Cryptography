@@ -1,12 +1,10 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/cryptography.dir/src/Cry.cpp.obj"
-  "CMakeFiles/cryptography.dir/src/Cry.cpp.obj.d"
-  "CMakeFiles/cryptography.dir/src/main.cpp.obj"
-  "CMakeFiles/cryptography.dir/src/main.cpp.obj.d"
-  "cryptography.exe"
-  "cryptography.exe.manifest"
+  "CMakeFiles/cryptography.dir/src/Cry.cpp.o"
+  "CMakeFiles/cryptography.dir/src/Cry.cpp.o.d"
+  "CMakeFiles/cryptography.dir/src/main.cpp.o"
+  "CMakeFiles/cryptography.dir/src/main.cpp.o.d"
+  "cryptography"
   "cryptography.pdb"
-  "libcryptography.dll.a"
 )
 
 # Per-language clean rules from dependency scanning.

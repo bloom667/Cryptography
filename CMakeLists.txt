@@ -5,6 +5,8 @@ project (cryptography)
 # 设置 C++ 标准
 set(CMAKE_CXX_STANDARD 14)
 
+find_package(OpenSSL REQUIRED)
+
 include_directories(include)
 
 # 指定生成目标
@@ -12,4 +14,7 @@ add_executable(cryptography
             src/main.cpp
             src/Cry.cpp
             )
+
+target_link_libraries(cryptography OpenSSL::SSL OpenSSL::Crypto)
+
 
