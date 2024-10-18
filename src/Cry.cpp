@@ -100,7 +100,7 @@ namespace cry{
         BN_free(bne);     
     }
 
-    string sign_file(const string& file_path, const string& private_key_file){
+    void sign_file(const string& file_path, const string& private_key_file, const string& signed_file_path){
         //Read the private key
         FILE* private_key_fp = fopen(private_key_file.c_str(),"rb");
         if(!private_key_fp){
@@ -151,15 +151,16 @@ namespace cry{
 
         RSA_free(rsa);
 
-        // Convert signature to hexadecimal string
-        ostringstream oss;
-        for (unsigned int i = 0; i < signature_length; ++i) {
-            oss << hex << setw(2) << setfill('0') << (int)signature[i];
+        ofstream signed_file(signed_file_path, ios::binary);
+        if(!signed_file.is_open()){
+            throw runtime_error("fail to create signed file to write");
         }
-        return oss.str();
+        signed_file.write(reinterpret_cast<const char*>(signature), signature_length);
+        signed_file.close();
+
     }
 
-    bool verify_signature(const string& file_path, const string& signature_hex, const string& public_key_file){
+    bool verify_signature(const string& file_path, const string& signature_file, const string& public_key_file){
         // Read public key
         FILE* public_key_fp = fopen(public_key_file.c_str(), "rb");
         if (!public_key_fp) {
@@ -200,11 +201,14 @@ namespace cry{
 
         EVP_MD_CTX_free(ctx);
 
-        // Convert signature from hex string to binary
-        vector<unsigned char> signature(signature_hex.length() / 2);
-        for (size_t i = 0; i < signature_hex.length(); i += 2) {
-            signature[i / 2] = stoi(signature_hex.substr(i, 2), nullptr, 16);
+         // Read the signature from the signed file
+        ifstream signature_file_stream(signature_file, ios::binary);
+        if (!signature_file_stream.is_open()) {
+            RSA_free(rsa);
+            throw runtime_error("cannot open signature file");
         }
+        vector<unsigned char> signature((istreambuf_iterator<char>(signature_file_stream)), istreambuf_iterator<char>());
+        signature_file_stream.close();
 
         // Verify the signature
         bool result = RSA_verify(NID_sha256, hash, lengthOfHash, signature.data(), signature.size(), rsa) == 1;
