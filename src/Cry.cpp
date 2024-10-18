@@ -1,10 +1,14 @@
 #include <openssl/evp.h>
 #include <openssl/sha.h>
+#include <openssl/rsa.h>
+#include <openssl/pem.h>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+
+#define KEY_LENGTH 4096
 
 
 using namespace std;
@@ -60,5 +64,38 @@ namespace cry{
             oss << hex << setw(2) << setfill('0') << (int)hash[i];
         }
         return oss.str();
+    }
+
+    void generate_rsa_key(const std::string& private_key_file, const std::string& public_key_file){
+        // Generate RSA-4096 key pair
+        RSA* rsa = RSA_new();
+        BIGNUM* bne = BN_new();
+        BN_set_word(bne, RSA_F4);
+
+        rsa = RSA_generate_key(KEY_LENGTH, RSA_F4, nullptr, nullptr);
+        if(!rsa){
+            throw runtime_error("fail to generate RSA key");
+        }
+
+        //Save private key
+        FILE* private_key_fp = fopen(private_key_file.c_str(),"wb");
+        if(! private_key_fp){
+            RSA_free(rsa);
+            throw runtime_error("fail to open the file to write private key");
+        }
+        PEM_write_RSAPrivateKey(private_key_fp, rsa, nullptr, nullptr, 0, nullptr, nullptr);
+        fclose(private_key_fp);
+
+        //save public key
+        FILE* public_key_fp = fopen(public_key_file.c_str(),"wb");
+        if(! public_key_fp){
+            RSA_free(rsa);
+            throw runtime_error("fail to open the file to write public key");
+        }
+        PEM_write_RSAPublicKey(private_key_fp, rsa);
+        fclose(public_key_fp);   
+
+        RSA_free(rsa);
+        BN_free(bne);     
     }
 }

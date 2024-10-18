@@ -14,7 +14,15 @@ int main(){
         out << hash;
         out.close();
 
-        cout << "SHA-512哈希已成功写入digestfile.hex" << endl;
+        cout << "SHA-512 has been written into digestfile.hex" << endl;
+    }catch (const exception& e){
+        cerr << e.what() << endl;
+        return 1;
+    }
+    //RSA key pair
+    try{
+        generate_rsa_key("RSA_private_key.pem", "RSA_public_key.pem");
+        cout << "RSA key pair has been generated";
     }catch (const exception& e){
         cerr << e.what() << endl;
         return 1;
