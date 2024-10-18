@@ -7,6 +7,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #define KEY_LENGTH 4096
 
@@ -86,7 +87,7 @@ namespace cry{
         PEM_write_RSAPrivateKey(private_key_fp, rsa, nullptr, nullptr, 0, nullptr, nullptr);
         fclose(private_key_fp);
 
-        //save public key
+        //Save public key
         FILE* public_key_fp = fopen(public_key_file.c_str(),"wb");
         if(! public_key_fp){
             RSA_free(rsa);
@@ -97,5 +98,118 @@ namespace cry{
 
         RSA_free(rsa);
         BN_free(bne);     
+    }
+
+    string sign_file(const string& file_path, const string& private_key_file){
+        //Read the private key
+        FILE* private_key_fp = fopen(private_key_file.c_str(),"rb");
+        if(!private_key_fp){
+            throw runtime_error("fail to open the file");
+        }
+        RSA* rsa = PEM_read_RSAPrivateKey(private_key_fp, nullptr, nullptr, nullptr);
+        fclose(private_key_fp);
+        if(!rsa){
+            throw runtime_error("fail to read the private key");
+        }
+
+        //Hash the file
+        ifstream file(file_path, ios::binary);
+        if(!file.is_open()){
+            RSA_free(rsa);
+            throw logic_error("cannot open the file");
+        }
+
+        EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+        EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr);
+
+        char buffer[8192];
+        while(file.read(buffer, sizeof(buffer))){
+            if (EVP_DigestUpdate(ctx, buffer, file.gcount()) != 1) {
+            EVP_MD_CTX_free(ctx);
+            RSA_free(rsa);
+            throw runtime_error("fail to update digest");
+            }
+        }
+
+        unsigned char hash[SHA256_DIGEST_LENGTH];
+        unsigned int lengthOfHash = 0;
+        if (EVP_DigestFinal_ex(ctx, hash, &lengthOfHash) != 1) {
+            EVP_MD_CTX_free(ctx);
+            RSA_free(rsa);
+            throw runtime_error("fail to finalize digest");
+        }
+
+        EVP_MD_CTX_free(ctx);
+
+        // Sign the hash
+        unsigned char signature[RSA_size(rsa)];
+        unsigned int signature_length = 0;
+        if (RSA_sign(NID_sha256, hash, lengthOfHash, signature, &signature_length, rsa) != 1) {
+            RSA_free(rsa);
+            throw runtime_error("failed to sign the file");
+        }
+
+        RSA_free(rsa);
+
+        // Convert signature to hexadecimal string
+        ostringstream oss;
+        for (unsigned int i = 0; i < signature_length; ++i) {
+            oss << hex << setw(2) << setfill('0') << (int)signature[i];
+        }
+        return oss.str();
+    }
+
+    bool verify_signature(const string& file_path, const string& signature_hex, const string& public_key_file){
+        // Read public key
+        FILE* public_key_fp = fopen(public_key_file.c_str(), "rb");
+        if (!public_key_fp) {
+            throw runtime_error("fail to open public key file");
+        }
+        RSA* rsa = PEM_read_RSAPublicKey(public_key_fp, nullptr, nullptr, nullptr);
+        fclose(public_key_fp);
+        if (!rsa) {
+            throw runtime_error("fail to read public key");
+        }
+
+        // Hash the file
+        ifstream file(file_path, ios::binary);
+        if (!file.is_open()) {
+            RSA_free(rsa);
+            throw logic_error("cannot open the file");
+        }
+
+        EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+        EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr);
+
+        char buffer[8192];
+        while (file.read(buffer, sizeof(buffer))) {
+            if (EVP_DigestUpdate(ctx, buffer, file.gcount()) != 1) {
+                EVP_MD_CTX_free(ctx);
+                RSA_free(rsa);
+                throw runtime_error("fail to update digest");
+            }
+        }
+
+        unsigned char hash[SHA256_DIGEST_LENGTH];
+        unsigned int lengthOfHash = 0;
+        if (EVP_DigestFinal_ex(ctx, hash, &lengthOfHash) != 1) {
+            EVP_MD_CTX_free(ctx);
+            RSA_free(rsa);
+            throw runtime_error("fail to finalize digest");
+        }
+
+        EVP_MD_CTX_free(ctx);
+
+        // Convert signature from hex string to binary
+        vector<unsigned char> signature(signature_hex.length() / 2);
+        for (size_t i = 0; i < signature_hex.length(); i += 2) {
+            signature[i / 2] = stoi(signature_hex.substr(i, 2), nullptr, 16);
+        }
+
+        // Verify the signature
+        bool result = RSA_verify(NID_sha256, hash, lengthOfHash, signature.data(), signature.size(), rsa) == 1;
+
+        RSA_free(rsa);
+        return result;
     }
 }
