@@ -39,6 +39,26 @@ int main(){
         cerr << e.what() << endl;
         return 1;
     }
+    //AES key part
+    try{
+        // Generate AES-256 key and save to file
+        generate_aes_key("AES_key.txt");
+        cout << "AES key generated successfully." << endl;
+
+        // Encrypt the AES key using RSA public key
+        encrypt_aes_key("AES_key.txt", "RSA_public_key.pem", "encrypted_AES_key.txt");
+        cout << "AES key encrypted successfully." << endl;
+
+        // Decrypt the encrypted AES key using RSA private key
+        decrypt_aes_key("encrypted_AES_key.txt", "RSA_private_key.pem", "decrypted_AES_key.txt");
+        cout << "AES key decrypted successfully." << endl;
+
+        bool res = compare_res("decrypted_AES_key.txt", "AES_key.txt");
+        cout << "The decrypted AES key is " << (res ? "same" : "different") << " with AES key." << endl;
+    }catch (const exception& e){
+        cerr << e.what() << endl;
+        return 1;
+    }
        
     return 0;
 }

@@ -150,6 +150,8 @@ CMakeFiles/cryptography.dir/src/Cry.cpp.o
  /usr/include/openssl/pemerr.h
  /usr/include/openssl/pkcs7.h
  /usr/include/openssl/pkcs7err.h
+ /usr/include/openssl/rand.h
+ /usr/include/openssl/randerr.h
  /usr/include/openssl/rsa.h
  /usr/include/openssl/rsaerr.h
  /usr/include/openssl/safestack.h

@@ -2,6 +2,7 @@
 #include <openssl/sha.h>
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
+#include <openssl/rand.h>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
@@ -216,4 +217,117 @@ namespace cry{
         RSA_free(rsa);
         return result;
     }
+
+    void generate_aes_key(const std::string& aes_key_file){
+        unsigned char aes_key[32];//32bytes=256bits
+        if(RAND_bytes(aes_key, sizeof(aes_key))!=1){
+            throw runtime_error("fail to generate aes key");
+        }
+
+        ofstream file(aes_key_file, ios::binary);
+        if(!file.is_open()){
+            throw runtime_error("cannot open file to write aes key");
+        }
+        file.write(reinterpret_cast<const char*>(aes_key), sizeof(aes_key));
+        file.close();
+    }
+
+    void encrypt_aes_key(const string& aes_key_file, const string& public_key_file, const string& encrypted_aes_key_file) {
+        // Read AES key
+        ifstream key_file(aes_key_file, ios::binary);
+        if (!key_file.is_open()) {
+            throw runtime_error("cannot open AES key file for reading");
+        }
+        vector<unsigned char> aes_key((istreambuf_iterator<char>(key_file)), istreambuf_iterator<char>());
+        key_file.close();
+
+        // Read public key
+        FILE* public_key_fp = fopen(public_key_file.c_str(), "rb");
+        if (!public_key_fp) {
+            throw runtime_error("fail to open public key file");
+        }
+        RSA* rsa = PEM_read_RSAPublicKey(public_key_fp, nullptr, nullptr, nullptr);
+        fclose(public_key_fp);
+        if (!rsa) {
+            throw runtime_error("fail to read public key");
+        }
+
+        // Encrypt AES key
+        vector<unsigned char> encrypted_key(RSA_size(rsa));
+        int encrypted_length = RSA_public_encrypt(aes_key.size(), aes_key.data(), encrypted_key.data(), rsa, RSA_PKCS1_OAEP_PADDING);
+        if (encrypted_length == -1) {
+            RSA_free(rsa);
+            throw runtime_error("fail to encrypt AES key");
+        }
+
+        RSA_free(rsa);
+
+        // Write encrypted AES key to file
+        ofstream encrypted_key_file(encrypted_aes_key_file, ios::binary);
+        if (!encrypted_key_file.is_open()) {
+            throw runtime_error("cannot open encrypted AES key file for writing");
+        }
+        encrypted_key_file.write(reinterpret_cast<const char*>(encrypted_key.data()), encrypted_length);
+        encrypted_key_file.close();
+    }
+
+    void decrypt_aes_key(const string& encrypted_aes_key_file, const string& private_key_file, const string& decrypted_aes_key_file) {
+        // Read encrypted AES key
+        ifstream encrypted_key_file(encrypted_aes_key_file, ios::binary);
+        if (!encrypted_key_file.is_open()) {
+            throw runtime_error("cannot open encrypted AES key file for reading");
+        }
+        vector<unsigned char> encrypted_key((istreambuf_iterator<char>(encrypted_key_file)), istreambuf_iterator<char>());
+        encrypted_key_file.close();
+
+        // Read private key
+        FILE* private_key_fp = fopen(private_key_file.c_str(), "rb");
+        if (!private_key_fp) {
+            throw runtime_error("failed to open private key file");
+        }
+        RSA* rsa = PEM_read_RSAPrivateKey(private_key_fp, nullptr, nullptr, nullptr);
+        fclose(private_key_fp);
+        if (!rsa) {
+            throw runtime_error("failed to read private key");
+        }
+
+        // Decrypt AES key
+        vector<unsigned char> decrypted_key(RSA_size(rsa));
+        int decrypted_length = RSA_private_decrypt(encrypted_key.size(), encrypted_key.data(), decrypted_key.data(), rsa, RSA_PKCS1_OAEP_PADDING);
+        if (decrypted_length == -1) {
+            RSA_free(rsa);
+            throw runtime_error("failed to decrypt AES key");
+        }
+
+        RSA_free(rsa);
+
+        // Write decrypted AES key to file
+        ofstream decrypted_key_file(decrypted_aes_key_file, ios::binary);
+        if (!decrypted_key_file.is_open()) {
+            throw runtime_error("cannot open decrypted AES key file for writing");
+        }
+        decrypted_key_file.write(reinterpret_cast<const char*>(decrypted_key.data()), decrypted_length);
+        decrypted_key_file.close();
+    }
+
+    bool compare_res(const std::string decrypted_aes_key_file, const std::string aes_key_file){
+        //Use string to store the content in the file
+        ifstream decrypted_key_file(decrypted_aes_key_file, ios::binary);
+        if(!decrypted_key_file.is_open()){
+            throw runtime_error("cannot open decrypted AES key file for reading");
+        }
+        string str_decrypted_file;
+        decrypted_key_file >> str_decrypted_file;
+
+        ifstream key_file(aes_key_file, ios::binary);
+        if(!key_file.is_open()){
+            throw runtime_error("cannot open AES key file for reading");
+        }
+        string str_key_file;
+        key_file >> str_key_file;
+
+        bool res = (str_key_file == str_decrypted_file ? true:false);
+        return res;
+    }
 }
+

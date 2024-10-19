@@ -8,6 +8,10 @@ namespace cry{
     void generate_rsa_key(const std::string& private_key_file, const std::string& public_key_file);
     void sign_file(const std::string& file_path, const std::string& private_key_file, const std::string& signed_file_path);
     bool verify_signature(const std::string& file_path, const std::string& signature_file, const std::string& public_key_file);
+    void generate_aes_key(const std::string& aes_key_file);
+    void encrypt_aes_key(const std::string& aes_key_file, const std::string& public_key_file, const std::string& encrypted_aes_key_file);
+    void decrypt_aes_key(const std::string& encrypted_aes_key_file, const std::string& private_key_file, const std::string& decrypted_aes_key_file);
+    bool compare_res(const std::string decrypted_aes_key_file, const std::string aes_key_file);
 }
 
 #endif
