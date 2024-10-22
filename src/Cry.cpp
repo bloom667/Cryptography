@@ -5,6 +5,7 @@
 #include <openssl/rand.h>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -397,10 +398,20 @@ namespace cry{
             ciphertext_stream.write(reinterpret_cast<const char*>(ciphertext), len);
         }
 
+        // 处理文件末尾少于 4096 字节的数据
+        if (plaintext_stream.gcount() > 0) {
+            if (EVP_EncryptUpdate(ctx, ciphertext, &len, buffer, plaintext_stream.gcount()) != 1) {
+                EVP_CIPHER_CTX_free(ctx);
+                throw runtime_error("encryption fail");
+            }
+            ciphertext_stream.write(reinterpret_cast<const char*>(ciphertext), len);
+        }
+
         if (EVP_EncryptFinal_ex(ctx, ciphertext, &len) != 1) {
             EVP_CIPHER_CTX_free(ctx);
             throw runtime_error("final encryption step fail");
         }
+        cout << "Length of final block (encryption): " << len << std::endl;
         ciphertext_stream.write(reinterpret_cast<const char*>(ciphertext), len);
 
         // Get tag and write to file
@@ -486,6 +497,14 @@ namespace cry{
         int decrypted_len;
 
         while (ciphertext_stream.read(reinterpret_cast<char*>(buffer), sizeof(buffer))) {
+            if (EVP_DecryptUpdate(ctx, decrypted, &len, buffer, ciphertext_stream.gcount()) != 1) {
+                EVP_CIPHER_CTX_free(ctx);
+                throw runtime_error("decryption fail");
+            }
+            decrypted_stream.write(reinterpret_cast<const char*>(decrypted), len);
+        }
+
+        if (ciphertext_stream.gcount() > 0) {
             if (EVP_DecryptUpdate(ctx, decrypted, &len, buffer, ciphertext_stream.gcount()) != 1) {
                 EVP_CIPHER_CTX_free(ctx);
                 throw runtime_error("decryption fail");
