@@ -12,6 +12,9 @@ namespace cry{
     void encrypt_aes_key(const std::string& aes_key_file, const std::string& public_key_file, const std::string& encrypted_aes_key_file);
     void decrypt_aes_key(const std::string& encrypted_aes_key_file, const std::string& private_key_file, const std::string& decrypted_aes_key_file);
     bool compare_res(const std::string decrypted_aes_key_file, const std::string aes_key_file);
+    void encrypt_file_aes_gcm(const std::string& plaintext_file, const std::string& aes_key_file, const std::string& iv_file, const std::string& ciphertext_file, const std::string& tag_file);
+    void decrypt_file_aes_gcm(const std::string& ciphertext_file, const std::string& aes_key_file, const std::string& iv_file, const std::string& tag_file, const std::string& decrypted_file);
+    void sha512_digest_file(const std::string& file_path, const std::string& digest_file);
 }
 
 #endif

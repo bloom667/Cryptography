@@ -9,7 +9,7 @@ using namespace cry;
 int main(){
     //Hash function 
     try{
-        string hash = sha512_hash("../plaintext_file.pdf");
+        string hash = sha512_hash("../plaintext_file.txt");
 
         ofstream out("digest_file.hex");
         out << hash;
@@ -30,10 +30,10 @@ int main(){
     }
     //Sign the file and verify the signature
     try{
-        sign_file("../plaintext_file.pdf", "RSA_private_key.pem", "signed_file");
+        sign_file("../plaintext_file.txt", "RSA_private_key.pem", "signed_file");
         cout << "File signed successfully." << endl;
 
-        bool is_valid = verify_signature("../plaintext_file.pdf", "signed_file", "RSA_public_key.pem");
+        bool is_valid = verify_signature("../plaintext_file.txt", "signed_file", "RSA_public_key.pem");
         cout << "Signature verification: " << (is_valid ? "Valid" : "Invalid") << endl;
     }catch (const exception& e){
         cerr << e.what() << endl;
@@ -59,6 +59,29 @@ int main(){
         cerr << e.what() << endl;
         return 1;
     }
-       
+
+    try{
+        // Encrypt the plaintext file using AES-256 GCM
+        encrypt_file_aes_gcm("../plaintext_file.txt", "AES_key.txt", "iv.txt", "ciphertext.txt", "tag.txt");
+        cout << "Plaintext file encrypted successfully." << endl;
+
+        // Decrypt the ciphertext file using AES-256 GCM
+        decrypt_file_aes_gcm("ciphertext.txt", "AES_key.txt", "iv.txt", "tag.txt", "decrypted.txt");
+        cout << "Ciphertext file decrypted successfully." << endl;
+
+        // Compute SHA-512 digest of decrypted file
+        string hash = sha512_hash("decrypted.txt");
+
+        ofstream out("digest_decrypted_file.hex");
+        out << hash;
+        out.close();
+
+        bool res = compare_res("digest_file.hex", "digest_decrypted_file.hex");
+        cout << "The decrypted file digest is " << (res ? "same" : "different") << " with file digest." << endl;
+    }catch (const exception& e){
+        cerr << e.what() << endl;
+        return 1;
+    }
+
     return 0;
 }
